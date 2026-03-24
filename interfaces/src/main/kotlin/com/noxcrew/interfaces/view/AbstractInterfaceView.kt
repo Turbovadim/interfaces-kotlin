@@ -372,7 +372,12 @@ public abstract class AbstractInterfaceView<I : InterfacesInventory, T : Interfa
 
     override suspend fun back() {
         val parent = parent()
-        if (parent == null) {
+
+        // If the state is not valid, don't do anything!
+        if (!coroutineContext.isActive || Bukkit.isStopping() || !player.isConnected) return
+
+        // If the parent has been requested to close, don't open any menu!
+        if (parent == null || !parent.isTreeOpened) {
             close()
         } else {
             parent.open(reload = false)
