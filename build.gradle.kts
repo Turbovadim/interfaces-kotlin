@@ -10,10 +10,8 @@ import io.papermc.paperweight.userdev.PaperweightUserDependenciesExtension
 plugins {
     alias(libs.plugins.run.paper) apply false
     alias(libs.plugins.paper.userdev) apply false
-
     // Kotlin plugin prefers to be applied to parent when it's used in multiple sub-modules.
-    kotlin("jvm") version "2.1.10" apply false
-
+    kotlin("jvm") version "2.3.20" apply false
     alias(libs.plugins.spotless)
 }
 
@@ -21,7 +19,7 @@ val javaVersion: Int = 21
 
 allprojects {
     group = "com.noxcrew.interfaces"
-    version = "2.1.0-SNAPSHOT"
+    version = "2.1.0-folia-SNAPSHOT"
 
     tasks.withType<JavaCompile> {
         sourceCompatibility = javaVersion.toString()
