@@ -17,11 +17,11 @@ plugins {
     alias(libs.plugins.spotless)
 }
 
-val javaVersion: Int = 25
+val javaVersion: Int = 21
 
 allprojects {
     group = "com.noxcrew.interfaces"
-    version = "2.2.0-SNAPSHOT"
+    version = "2.2.0-folia-SNAPSHOT"
 
     tasks.withType<JavaCompile> {
         sourceCompatibility = javaVersion.toString()
@@ -34,12 +34,16 @@ subprojects {
     apply(plugin = "java-library")
     apply<SpotlessPlugin>()
 
+    configure<JavaPluginExtension> {
+        toolchain.languageVersion.set(JavaLanguageVersion.of(javaVersion))
+    }
+
     // Apply paperweight outside the API module
     if (name != "api") {
         apply<PaperweightUser>()
 
         dependencies {
-            extensions.findByType<PaperweightUserDependenciesExtension>()?.paperDevBundle("26.2.build.65-beta")
+            extensions.findByType<PaperweightUserDependenciesExtension>()?.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
         }
     }
     if (name != "examples") {

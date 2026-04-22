@@ -15,6 +15,7 @@ import com.noxcrew.interfaces.grid.mapping.PlayerInventoryGridMapper
 import com.noxcrew.interfaces.interfaces.PlayerInventoryType
 import com.noxcrew.interfaces.inventory.clearInventory
 import com.noxcrew.interfaces.menu.MenuOpenOperation
+import com.noxcrew.interfaces.utilities.FoliaScheduler
 import com.noxcrew.interfaces.utilities.InterfacesCoroutineDetails
 import com.noxcrew.interfaces.view.AbstractInterfaceView
 import com.noxcrew.interfaces.view.ContainerInterfaceView
@@ -28,6 +29,7 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.block.Block
 import org.bukkit.craftbukkit.entity.CraftPlayer
+import org.bukkit.entity.Entity
 import org.bukkit.entity.HumanEntity
 import org.bukkit.entity.Player
 import org.bukkit.event.Event
@@ -835,11 +837,9 @@ public class InterfacesListeners private constructor(private val plugin: Plugin)
             completedClickHandler.complete()
         } else {
             // Automatically cancel the click handler after 6 seconds max!
-            Bukkit.getScheduler().runTaskLaterAsynchronously(
-                plugin,
-                Runnable { completedClickHandler.cancel() },
-                120,
-            )
+            FoliaScheduler.runTaskLaterAsynchronously(plugin, 120L,) {
+                completedClickHandler.cancel()
+            }
         }
         return !raw.isSlotModifiable
     }
@@ -880,7 +880,7 @@ public class InterfacesListeners private constructor(private val plugin: Plugin)
         val playerId = view.player.uniqueId
         openPlayerInterfaceViews -= playerId
 
-        runSync {
+        runSync(view.player) {
             // Close the current inventory to open another to avoid close reasons
             val reopen = view.shouldStillBeOpened
             withoutReopen {
@@ -910,8 +910,9 @@ public class InterfacesListeners private constructor(private val plugin: Plugin)
 
         // Set a timer for to automatically cancel this query to prevent players
         // from being stuck in a mode they don't understand for too long
-        Bukkit.getScheduler().runTaskLater(
+        FoliaScheduler.runTaskLater(
             plugin,
+            timeout.inWholeMilliseconds / 50,
             Runnable {
                 val queryThen = queries[playerId] ?: return@Runnable
                 if (queryThen.id != id) return@Runnable
@@ -932,7 +933,6 @@ public class InterfacesListeners private constructor(private val plugin: Plugin)
                     view.reopenIfIntended()
                 }
             },
-            timeout.inWholeMilliseconds / 50,
         )
     }
 
@@ -964,13 +964,12 @@ public class InterfacesListeners private constructor(private val plugin: Plugin)
         }
     }
 
-    /** Runs [function] on the main thread. */
-    internal fun runSync(function: () -> Unit) {
-        if (Bukkit.isPrimaryThread()) {
-            function()
-            return
-        }
-
-        Bukkit.getScheduler().callSyncMethod(plugin, function)
+    /**
+     * Runs [function] on the main thread (Paper/Spigot) or on the entity's region
+     * thread (Folia) when [entity] is non-null. On Folia without an entity the task
+     * runs on the global region scheduler instead.
+     */
+    internal fun runSync(entity: Entity? = null, function: () -> Unit) {
+        FoliaScheduler.runSync(plugin, entity) { function() }
     }
 }
